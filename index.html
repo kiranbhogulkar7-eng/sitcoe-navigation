@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+body {margin:0;font-family:Arial;text-align:center;}
+header {background:#a8dadc;padding:20px;font-size:22px;font-weight:bold;}
+button {
+    padding:10px 16px;
+    margin:6px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    color:black;
+}
+.dept-btn { font-size:16px; }
+.cse { background:#b9e3e9; }
+.mech { background:#f5e0be; }
+.civil { background:#aed6f3; }
+.electrical { background:#f0b4c8; }
+.ece { background:#dbd8fa; }
+.robotics { background:#d0f5d3; }
+.library { background:#c8b1eb; }
+
+#classrooms { display:none; margin-top:15px; }
+.class-btn {
+    background:#4CAF50;
+    color:white;
+    padding:8px 12px;
+    margin:4px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+#map { height:600px; margin-top:15px; }
+</style>
+</head>
+<body>
+
+<header>SITCOE Smart Campus Navigation</header>
+
+<h3>Select Department</h3>
+<button class="dept-btn cse" onclick="showClassrooms('CSE')">Computer Science & Engineering</button>
+<button class="dept-btn mech" onclick="showClassrooms('Mechanical')">Mechanical Engineering</button>
+<button class="dept-btn civil" onclick="showClassrooms('Civil')">Civil Engineering</button>
+<button class="dept-btn electrical" onclick="showClassrooms('Electrical')">Electrical Engineering</button>
+<button class="dept-btn ece" onclick="showClassrooms('ECE')">Electronics & Communication</button>
+<button class="dept-btn robotics" onclick="showClassrooms('Robotics')">Robotics Engineering</button>
+<button class="dept-btn library" onclick="showClassrooms('Library')">Library</button>
+
+<div id="classrooms">
+<h3>Select Classroom (38–52)</h3>
+<div id="classBtns"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+var mainGate = [16.708013698320368, 74.47822739425105];
+var classrooms = {"38": [16.707899, 74.47947], "39": [16.707914, 74.479475], "40": [16.707929, 74.47948], "41": [16.707944, 74.479485], "42": [16.707959, 74.47949], "43": [16.707974, 74.479495], "44": [16.707989, 74.479498], "45": [16.708004, 74.4795], "46": [16.708019, 74.479505], "47": [16.708034, 74.47951], "48": [16.708049, 74.479515], "49": [16.708064, 74.47952], "50": [16.708079, 74.479525], "51": [16.708094, 74.47953], "52": [16.708109, 74.479535]};
+var map = L.map('map').setView(mainGate, 18);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom:22
+}).addTo(map);
+
+L.marker(mainGate).addTo(map).bindPopup("Main Gate").openPopup();
+var routeLayer = L.layerGroup().addTo(map);
+
+// Show classrooms for any department
+function showClassrooms(deptName) {
+    document.getElementById("classrooms").style.display = "block";
+    document.getElementById("classBtns").innerHTML = "";
+    for (var room in classrooms) {
+        document.getElementById("classBtns").innerHTML +=
+        '<button class="class-btn" onclick="navigateTo(\''+room+'\')">'+deptName+' Classroom '+room+'</button>';
+    }
+}
+
+// Draw route to selected classroom
+function navigateTo(room) {
+    routeLayer.clearLayers();
+    var dest = classrooms[room];
+
+    var osrmUrl = "https://router.project-osrm.org/route/v1/walking/"
+        + mainGate[1] + "," + mainGate[0] + ";"
+        + dest[1] + "," + dest[0]
+        + "?overview=full&geometries=geojson";
+
+    fetch(osrmUrl)
+    .then(res => res.json())
+    .then(data => {
+        if (data.routes && data.routes.length > 0) {
+            var coords = data.routes[0].geometry.coordinates;
+            var latlngs = coords.map(c => [c[1], c[0]]);
+            L.polyline(latlngs, {color: "blue", weight: 6}).addTo(routeLayer);
+        } else {
+            L.polyline([mainGate, dest], {color: "blue", weight: 6, dashArray:"5,5"}).addTo(routeLayer);
+        }
+    })
+    .catch(err => {
+        L.polyline([mainGate, dest], {color: "blue", weight: 6, dashArray:"5,5"}).addTo(routeLayer);
+    });
+
+    L.marker(dest).addTo(routeLayer).bindPopup("Classroom " + room).openPopup();
+}
+</script>
+
+</body>
+</html>
