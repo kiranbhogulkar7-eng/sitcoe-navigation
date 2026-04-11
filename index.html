@@ -1,115 +1,232 @@
-
+from IPython.display import HTML
+HTML('''
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-body {margin:0;font-family:Arial;text-align:center;}
-header {background:#a8dadc;padding:20px;font-size:22px;font-weight:bold;}
-button {
-    padding:10px 16px;
-    margin:6px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:bold;
-    color:black;
+body {
+    margin: 0;
+    font-family: Arial;
+    text-align: center;
+    background: #f8f9fa;
 }
-.dept-btn { font-size:16px; }
+
+header {
+    background: #a8dadc;
+    padding: 18px;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+}
+
+button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dept-btn { min-width: 220px; }
+
 .cse { background:#b9e3e9; }
 .mech { background:#f5e0be; }
 .civil { background:#aed6f3; }
 .electrical { background:#f0b4c8; }
 .ece { background:#dbd8fa; }
-.robotics { background:#d0f5d3; }
+.ar { background:#d0f5d3; }
+.aids { background:#ffd6a5; }
+.mechatronics { background:#c8b1eb; }
 .library { background:#c8b1eb; }
 
-#classrooms { display:none; margin-top:15px; }
-.class-btn {
-    background:#4CAF50;
-    color:white;
-    padding:8px 12px;
-    margin:4px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
+#classrooms {
+    display: none;
+    margin-top: 20px;
 }
-#map { height:600px; margin-top:15px; }
+
+#classBtns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    padding: 10px 20px;
+}
+
+.class-btn {
+    background: #4CAF50;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+#map {
+    height: 600px;
+    margin: 20px auto;
+    width: 95%;
+    border-radius: 10px;
+}
 </style>
 </head>
+
 <body>
 
 <header>SITCOE Smart Campus Navigation</header>
 
 <h3>Select Department</h3>
-<button class="dept-btn cse" onclick="showClassrooms('CSE')">Computer Science & Engineering</button>
-<button class="dept-btn mech" onclick="showClassrooms('Mechanical')">Mechanical Engineering</button>
-<button class="dept-btn civil" onclick="showClassrooms('Civil')">Civil Engineering</button>
-<button class="dept-btn electrical" onclick="showClassrooms('Electrical')">Electrical Engineering</button>
-<button class="dept-btn ece" onclick="showClassrooms('ECE')">Electronics & Communication</button>
-<button class="dept-btn robotics" onclick="showClassrooms('Robotics')">Robotics Engineering</button>
+
+<div class="button-container">
+
+<button class="dept-btn cse" onclick="showClassrooms('CSE')">CSE</button>
+<button class="dept-btn mech" onclick="showClassrooms('Mechanical')">Mechanical</button>
+<button class="dept-btn civil" onclick="showClassrooms('Civil')">Civil</button>
+<button class="dept-btn electrical" onclick="showClassrooms('Electrical')">Electrical</button>
+<button class="dept-btn ece" onclick="showClassrooms('ECE')">ECE</button>
+<button class="dept-btn ar" onclick="showClassrooms('AR')">Automation & Robotics</button>
+<button class="dept-btn aids" onclick="showClassrooms('AIDS')">AI & Data Science</button>
+<button class="dept-btn mechatronics" onclick="showClassrooms('MECHATRONICS')">Mechatronics</button>
 <button class="dept-btn library" onclick="showClassrooms('Library')">Library</button>
 
+</div>
+
 <div id="classrooms">
-<h3>Select Classroom (38–52)</h3>
+<h3>Select Classroom</h3>
 <div id="classBtns"></div>
 </div>
 
 <div id="map"></div>
 
 <script>
+
+// MAIN GATE
 var mainGate = [16.708013698320368, 74.47822739425105];
-var classrooms = {"38": [16.707899, 74.47947], "39": [16.707914, 74.479475], "40": [16.707929, 74.47948], "41": [16.707944, 74.479485], "42": [16.707959, 74.47949], "43": [16.707974, 74.479495], "44": [16.707989, 74.479498], "45": [16.708004, 74.4795], "46": [16.708019, 74.479505], "47": [16.708034, 74.47951], "48": [16.708049, 74.479515], "49": [16.708064, 74.47952], "50": [16.708079, 74.479525], "51": [16.708094, 74.47953], "52": [16.708109, 74.479535]};
+
+// MAP
 var map = L.map('map').setView(mainGate, 18);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom:22
+maxZoom: 22
 }).addTo(map);
 
-L.marker(mainGate).addTo(map).bindPopup("Main Gate").openPopup();
+L.marker(mainGate).addTo(map).bindPopup("Main Gate");
+
+// ROUTE LAYER
 var routeLayer = L.layerGroup().addTo(map);
 
-// Show classrooms for any department
-function showClassrooms(deptName) {
-    document.getElementById("classrooms").style.display = "block";
-    document.getElementById("classBtns").innerHTML = "";
-    for (var room in classrooms) {
-        document.getElementById("classBtns").innerHTML +=
-        '<button class="class-btn" onclick="navigateTo(\''+room+'\')">'+deptName+' Classroom '+room+'</button>';
-    }
+// ================= ALL CLASSROOMS =================
+var departments = {
+
+"CSE": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+1, [16.70790+(i*0.00001), 74.47940+(i*0.00001)]
+])),
+
+"Mechanical": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+21, [16.70770+(i*0.00001), 74.47920+(i*0.00001)]
+])),
+
+"Civil": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+41, [16.70750+(i*0.00001), 74.47900+(i*0.00001)]
+])),
+
+"Electrical": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+61, [16.70730+(i*0.00001), 74.47880+(i*0.00001)]
+])),
+
+"ECE": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+81, [16.70710+(i*0.00001), 74.47860+(i*0.00001)]
+])),
+
+"AR": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+101, [16.70690+(i*0.00001), 74.47840+(i*0.00001)]
+])),
+
+"AIDS": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+121, [16.70670+(i*0.00001), 74.47820+(i*0.00001)]
+])),
+
+"MECHATRONICS": Object.fromEntries([...Array(20)].map((_,i)=>[
+i+141, [16.70650+(i*0.00001), 74.47800+(i*0.00001)]
+])),
+
+"Library": Object.fromEntries([...Array(10)].map((_,i)=>[
+i+161, [16.70630+(i*0.00001), 74.47780+(i*0.00001)]
+]))
+
+};
+
+var selectedDept = "";
+
+// SHOW CLASSROOMS
+function showClassrooms(dept){
+selectedDept = dept;
+
+document.getElementById("classrooms").style.display = "block";
+document.getElementById("classBtns").innerHTML = "";
+
+for(let r in departments[dept]){
+document.getElementById("classBtns").innerHTML +=
+`<button class="class-btn" onclick="navigateTo(${r})">${dept} Room ${r}</button>`;
+}
 }
 
-// Draw route to selected classroom
-function navigateTo(room) {
-    routeLayer.clearLayers();
-    var dest = classrooms[room];
+// NAVIGATION
+function navigateTo(room){
 
-    var osrmUrl = "https://router.project-osrm.org/route/v1/walking/"
-        + mainGate[1] + "," + mainGate[0] + ";"
-        + dest[1] + "," + dest[0]
-        + "?overview=full&geometries=geojson";
+routeLayer.clearLayers();
 
-    fetch(osrmUrl)
-    .then(res => res.json())
-    .then(data => {
-        if (data.routes && data.routes.length > 0) {
-            var coords = data.routes[0].geometry.coordinates;
-            var latlngs = coords.map(c => [c[1], c[0]]);
-            L.polyline(latlngs, {color: "blue", weight: 6}).addTo(routeLayer);
-        } else {
-            L.polyline([mainGate, dest], {color: "blue", weight: 6, dashArray:"5,5"}).addTo(routeLayer);
-        }
-    })
-    .catch(err => {
-        L.polyline([mainGate, dest], {color: "blue", weight: 6, dashArray:"5,5"}).addTo(routeLayer);
-    });
+var dest = departments[selectedDept][room];
 
-    L.marker(dest).addTo(routeLayer).bindPopup("Classroom " + room).openPopup();
+var url = `https://router.project-osrm.org/route/v1/walking/${mainGate[1]},${mainGate[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
+
+fetch(url)
+.then(res => res.json())
+.then(data => {
+if(data.routes.length){
+let coords = data.routes[0].geometry.coordinates;
+let latlngs = coords.map(c => [c[1], c[0]]);
+L.polyline(latlngs, {color:"blue", weight:5}).addTo(routeLayer);
 }
+});
+
+L.marker(dest).addTo(routeLayer)
+.bindPopup(selectedDept + " Room " + room)
+.openPopup();
+}
+
+/* ================= LIVE LOCATION ================= */
+
+var userMarker, userCircle;
+
+map.on('locationfound', function(e){
+
+if(!userMarker){
+userMarker = L.marker(e.latlng).addTo(map).bindPopup("📍 You are here");
+userCircle = L.circle(e.latlng, e.accuracy).addTo(map);
+} else {
+userMarker.setLatLng(e.latlng);
+userCircle.setLatLng(e.latlng);
+userCircle.setRadius(e.accuracy);
+}
+
+});
+
+map.locate({
+watch:true,
+enableHighAccuracy:true,
+setView:false
+});
+
 </script>
-
 </body>
 </html>
+''')
