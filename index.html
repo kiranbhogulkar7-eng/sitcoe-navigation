@@ -10,19 +10,38 @@ HTML('''
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-body {margin:0;font-family:Arial;text-align:center;}
-header {background:#a8dadc;padding:20px;font-size:22px;font-weight:bold;}
+body {
+    margin:0;
+    font-family:Arial;
+    text-align:center;
+    background:#f5f7fa;
+}
 
-button {
-    padding:10px 16px;
-    margin:6px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
+header {
+    background:#a8dadc;
+    padding:18px;
+    font-size:22px;
     font-weight:bold;
 }
 
-.dept-btn { font-size:16px; }
+/* ===== DEPARTMENT BUTTON GRID ===== */
+#deptContainer {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    padding:10px;
+}
+
+.dept-btn {
+    padding:10px 14px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+    min-width:220px;
+}
+
 .cse { background:#b9e3e9; }
 .mech { background:#f5e0be; }
 .civil { background:#aed6f3; }
@@ -31,19 +50,43 @@ button {
 .robotics { background:#d0f5d3; }
 .library { background:#c8b1eb; }
 
-#classrooms { display:none; margin-top:15px; }
+/* ===== CLASS & LAB SECTION ===== */
+.container {
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-top:10px;
+}
+
+.box {
+    width:45%;
+    min-width:280px;
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
 
 .class-btn {
     background:#4CAF50;
     color:white;
-    padding:8px 12px;
+    padding:8px 10px;
     margin:4px;
     border:none;
     border-radius:6px;
     cursor:pointer;
 }
 
-#map { height:600px; margin-top:15px; }
+/* MAP */
+#map {
+    height:600px;
+    margin-top:15px;
+}
+
+@media(max-width:768px){
+    .box { width:90%; }
+}
 </style>
 </head>
 
@@ -53,110 +96,130 @@ button {
 
 <h3>Select Department</h3>
 
-<button class="dept-btn cse" onclick="showClassrooms('CSE')">Computer Science And Engineering</button>
-<button class="dept-btn mech" onclick="showClassrooms('MECH')">Mechanical Engineering </button>
-<button class="dept-btn civil" onclick="showClassrooms('Civil')">Civil Engineering</button>
-<button class="dept-btn electrical" onclick="showClassrooms('Electrical')">Electrical Engineering</button>
-<button class="dept-btn ece" onclick="showClassrooms('ECE ')">Electronics and Computer Engineering</button>
-<button class="dept-btn robotics" onclick="showClassrooms('AR')">Automation and  Robotics Engineering</button>
-<button class="dept-btn aids" onclick="showClassrooms('AIDS')">Artificial Intelligence And Data Science</button>
-<button class="dept-btn mechatronics" onclick="showClassrooms('MECH')">Mechatronics Engineering</button>
+<div id="deptContainer">
+<button class="dept-btn cse" onclick="openDept('CSE')">Computer Science & Engineering</button>
+<button class="dept-btn mech" onclick="openDept('MECH')">Mechanical Engineering</button>
+<button class="dept-btn civil" onclick="openDept('Civil')">Civil Engineering</button>
+<button class="dept-btn electrical" onclick="openDept('Electrical')">Electrical Engineering</button>
+<button class="dept-btn ece" onclick="openDept('ECE')">Electronics & Computer Engineering</button>
+<button class="dept-btn robotics" onclick="openDept('AR')">Automation & Robotics Engineering</button>
+<button class="dept-btn cse" onclick="openDept('AIDS')">AI & Data Science</button>
+<button class="dept-btn library" onclick="openDept('Library')">Library</button>
+</div>
 
-<button class="dept-btn library" onclick="showClassrooms('Library')">Library</button>
-
-<div id="classrooms">
-<h3>Select Classroom</h3>
+<div class="container">
+<div class="box">
+<h3>Classrooms</h3>
 <div id="classBtns"></div>
+</div>
+
+<div class="box">
+<h3>Labs</h3>
+<div id="LabBtns"></div>
+</div>
 </div>
 
 <div id="map"></div>
 
 <script>
 
-// MAIN GATE
 var mainGate = [16.708013698320368, 74.47822739425105];
 
-// YOUR FULL CLASSROOM DATA
+// ===== CLASSROOMS =====
 var departments = {
 
 "CSE": {
-1:[16.70790,74.47940], 2:[16.70791,74.47941], 3:[16.70792,74.47942], 4:[16.70793,74.47943],
-5:[16.70794,74.47944], 6:[16.70795,74.47945], 7:[16.70796,74.47946], 8:[16.70797,74.47947],
-9:[16.70798,74.47948], 10:[16.70799,74.47949], 11:[16.70800,74.47950], 12:[16.70801,74.47951],
-13:[16.70802,74.47952], 14:[16.70803,74.47953], 15:[16.70804,74.47954], 16:[16.70805,74.47955],
-17:[16.70806,74.47956], 18:[16.70807,74.47957], 19:[16.70808,74.47958], 20:[16.70809,74.47959]
+38:[16.70790,74.47940],
+43:[16.70791,74.47941],
+44:[16.70792,74.47942],
+45:[16.70793,74.47943],
+60:[16.70794,74.47944]
 },
 
-"Mecanical": {
-21:[16.70770,74.47920], 22:[16.70771,74.47921], 23:[16.70772,74.47922], 24:[16.70773,74.47923],
-25:[16.70774,74.47924], 26:[16.70775,74.47925], 27:[16.70776,74.47926], 28:[16.70777,74.47927],
-29:[16.70778,74.47928], 30:[16.70779,74.47929], 31:[16.70780,74.47930], 32:[16.70781,74.47931],
-33:[16.70782,74.47932], 34:[16.70783,74.47933], 35:[16.70784,74.47934], 36:[16.70785,74.47935],
-37:[16.70786,74.47936], 38:[16.70787,74.47937], 39:[16.70788,74.47938], 40:[16.70789,74.47939]
+"MECH": {
+21:[16.70770,74.47920],
+22:[16.70771,74.47921],
+23:[16.70772,74.47922]
 },
 
 "Civil": {
-41:[16.70750,74.47900], 42:[16.70751,74.47901], 43:[16.70752,74.47902], 44:[16.70753,74.47903],
-45:[16.70754,74.47904], 46:[16.70755,74.47905], 47:[16.70756,74.47906], 48:[16.70757,74.47907],
-49:[16.70758,74.47908], 50:[16.70759,74.47909], 51:[16.70760,74.47910], 52:[16.70761,74.47911],
-53:[16.70762,74.47912], 54:[16.70763,74.47913], 55:[16.70764,74.47914], 56:[16.70765,74.47915],
-57:[16.70766,74.47916], 58:[16.70767,74.47917], 59:[16.70768,74.47918], 60:[16.70769,74.47919]
+41:[16.70750,74.47900],
+42:[16.70751,74.47901]
 },
 
 "Electrical": {
-61:[16.70730,74.47880], 62:[16.70731,74.47881], 63:[16.70732,74.47882], 64:[16.70733,74.47883],
-65:[16.70734,74.47884], 66:[16.70735,74.47885], 67:[16.70736,74.47886], 68:[16.70737,74.47887],
-69:[16.70738,74.47888], 70:[16.70739,74.47889], 71:[16.70740,74.47890], 72:[16.70741,74.47891],
-73:[16.70742,74.47892], 74:[16.70743,74.47893], 75:[16.70744,74.47894], 76:[16.70745,74.47895],
-77:[16.70746,74.47896], 78:[16.70747,74.47897], 79:[16.70748,74.47898], 80:[16.70749,74.47899]
+61:[16.70730,74.47880],
+62:[16.70731,74.47881]
 },
 
 "ECE": {
-81:[16.70710,74.47860], 82:[16.70711,74.47861], 83:[16.70712,74.47862], 84:[16.70713,74.47863],
-85:[16.70714,74.47864], 86:[16.70715,74.47865], 87:[16.70716,74.47866], 88:[16.70717,74.47867],
-89:[16.70718,74.47868], 90:[16.70719,74.47869], 91:[16.70720,74.47870], 92:[16.70721,74.47871],
-93:[16.70722,74.47872], 94:[16.70723,74.47873], 95:[16.70724,74.47874], 96:[16.70725,74.47875],
-97:[16.70726,74.47876], 98:[16.70727,74.47877], 99:[16.70728,74.47878], 100:[16.70729,74.47879]
+81:[16.70710,74.47860],
+82:[16.70711,74.47861]
 },
 
 "AR": {
-101:[16.70690,74.47840], 102:[16.70691,74.47841], 103:[16.70692,74.47842], 104:[16.70693,74.47843],
-105:[16.70694,74.47844], 106:[16.70695,74.47845], 107:[16.70696,74.47846], 108:[16.70697,74.47847],
-109:[16.70698,74.47848], 110:[16.70699,74.47849], 111:[16.70700,74.47850], 112:[16.70701,74.47851],
-113:[16.70702,74.47852], 114:[16.70703,74.47853], 115:[16.70704,74.47854], 116:[16.70705,74.47855],
-117:[16.70706,74.47856], 118:[16.70707,74.47857], 119:[16.70708,74.47858], 120:[16.70709,74.47859]
+101:[16.70690,74.47840],
+102:[16.70691,74.47841]
 },
+
 "AIDS": {
-101:[16.70690,74.47840], 102:[16.70691,74.47841], 103:[16.70692,74.47842], 104:[16.70693,74.47843],
-105:[16.70694,74.47844], 106:[16.70695,74.47845], 107:[16.70696,74.47846], 108:[16.70697,74.47847],
-109:[16.70698,74.47848], 110:[16.70699,74.47849], 111:[16.70700,74.47850], 112:[16.70701,74.47851],
-113:[16.70702,74.47852], 114:[16.70703,74.47853], 115:[16.70704,74.47854], 116:[16.70705,74.47855],
-117:[16.70706,74.47856], 118:[16.70707,74.47857], 119:[16.70708,74.47858], 120:[16.70709,74.47859]
-},
-"MECH": {
-101:[16.70690,74.47840], 102:[16.70691,74.47841], 103:[16.70692,74.47842], 104:[16.70693,74.47843],
-105:[16.70694,74.47844], 106:[16.70695,74.47845], 107:[16.70696,74.47846], 108:[16.70697,74.47847],
-109:[16.70698,74.47848], 110:[16.70699,74.47849], 111:[16.70700,74.47850], 112:[16.70701,74.47851],
-113:[16.70702,74.47852], 114:[16.70703,74.47853], 115:[16.70704,74.47854], 116:[16.70705,74.47855],
-117:[16.70706,74.47856], 118:[16.70707,74.47857], 119:[16.70708,74.47858], 120:[16.70709,74.47859]
+111:[16.70700,74.47850],
+112:[16.70701,74.47851]
 },
 
 "Library": {
-121:[16.70670,74.47820], 122:[16.70671,74.47821], 123:[16.70672,74.47822], 124:[16.70673,74.47823],
-125:[16.70674,74.47824], 126:[16.70675,74.47825], 127:[16.70676,74.47826], 128:[16.70677,74.47827],
-129:[16.70678,74.47828], 130:[16.70679,74.47829], 131:[16.70680,74.47830], 132:[16.70681,74.47831],
-133:[16.70682,74.47832], 134:[16.70683,74.47833], 135:[16.70684,74.47834], 136:[16.70685,74.47835],
-137:[16.70686,74.47836], 138:[16.70687,74.47837], 139:[16.70688,74.47838], 140:[16.70689,74.47839]
+121:[16.70670,74.47820]
+}
+
+};
+
+// ===== LABS =====
+var Lab = {
+
+"CSE": {
+59:{name:"Project Lab",coord:[16.70795,74.47945]},
+58:{name:"Programming Lab",coord:[16.70796,74.47946]},
+56:{name:"Network Lab",coord:[16.70797,74.47947]},
+55:{name:"Web Lab",coord:[16.70798,74.47948]},
+54:{name:"OS Lab",coord:[16.70799,74.47949]},
+53:{name:"HOD Office",coord:[16.70800,74.47950]},
+52:{name:"Language Lab",coord:[16.70802,74.47952]},
+51:{name:"DB Lab",coord:[16.70803,74.47953]}
+},
+
+"MECH": {
+201:{name:"Thermal Lab",coord:[16.70780,74.47930]},
+202:{name:"Workshop",coord:[16.70781,74.47931]}
+},
+
+"Civil": {
+301:{name:"Survey Lab",coord:[16.70755,74.47905]}
+},
+
+"Electrical": {
+401:{name:"Machine Lab",coord:[16.70735,74.47885]}
+},
+
+"ECE": {
+501:{name:"VLSI Lab",coord:[16.70715,74.47865]}
+},
+
+"AR": {
+601:{name:"Robotics Lab",coord:[16.70695,74.47845]}
+},
+
+"AIDS": {
+701:{name:"AI Lab",coord:[16.70702,74.47852]}
 }
 
 };
 
 var selectedDept = "";
 
-// MAP
+// ===== MAP =====
 var map = L.map('map').setView(mainGate, 18);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 maxZoom:22
 }).addTo(map);
 
@@ -164,48 +227,71 @@ L.marker(mainGate).addTo(map).bindPopup("Main Gate").openPopup();
 
 var routeLayer = L.layerGroup().addTo(map);
 
-// SHOW CLASSROOMS
-function showClassrooms(dept){
+// ===== OPEN DEPT =====
+function openDept(dept){
 selectedDept = dept;
-document.getElementById("classrooms").style.display = "block";
+showClassrooms(dept);
+showLabs(dept);
+}
+
+// ===== CLASSROOMS =====
+function showClassrooms(dept){
 document.getElementById("classBtns").innerHTML = "";
 
-var rooms = departments[dept];
-
-for(let r in rooms){
+for(let r in departments[dept]){
 document.getElementById("classBtns").innerHTML +=
 `<button class="class-btn" onclick="navigateTo(${r})">${dept} Room ${r}</button>`;
 }
 }
 
-// NAVIGATION
+// ===== LABS =====
+function showLabs(dept){
+document.getElementById("LabBtns").innerHTML = "";
+
+if(!Lab[dept]) return;
+
+for(let l in Lab[dept]){
+document.getElementById("LabBtns").innerHTML +=
+`<button class="class-btn" onclick="navigateLab('${dept}',${l})">${Lab[dept][l].name}</button>`;
+}
+}
+
+// ===== NAV CLASSROOM =====
 function navigateTo(room){
 routeLayer.clearLayers();
-
 var dest = departments[selectedDept][room];
+drawRoute(dest,"blue",selectedDept+" Room "+room);
+}
+
+// ===== NAV LAB =====
+function navigateLab(dept,lab){
+routeLayer.clearLayers();
+var dest = Lab[dept][lab].coord;
+drawRoute(dest,"green",Lab[dept][lab].name);
+}
+
+// ===== ROUTE =====
+function drawRoute(dest,color,label){
 
 var url = `https://router.project-osrm.org/route/v1/walking/${mainGate[1]},${mainGate[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson`;
 
 fetch(url)
-.then(res=>res.json())
+.then(r=>r.json())
 .then(data=>{
 if(data.routes.length){
-let coords = data.routes[0].geometry.coordinates;
-let latlngs = coords.map(c=>[c[1],c[0]]);
-L.polyline(latlngs,{color:"blue",weight:6}).addTo(routeLayer);
+let path = data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+L.polyline(path,{color:color,weight:6}).addTo(routeLayer);
 }
 })
 .catch(()=>{
-L.polyline([mainGate,dest],{color:"blue",dashArray:"5,5"}).addTo(routeLayer);
+L.polyline([mainGate,dest],{color:color,dashArray:"5,5"}).addTo(routeLayer);
 });
 
-L.marker(dest).addTo(routeLayer)
-.bindPopup(selectedDept+" Room "+room)
-.openPopup();
+L.marker(dest).addTo(routeLayer).bindPopup(label).openPopup();
 }
 
-
 </script>
+
 </body>
 </html>
 ''')
